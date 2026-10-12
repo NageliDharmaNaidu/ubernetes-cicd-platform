@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resume-devops-app
+  labels:
+    app: resume-devops-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: resume-devops-app
+  template:
+    metadata:
+      labels:
+        app: resume-devops-app
+    spec:
+      containers:
+        - name: app
+          image: resume-devops-app:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 10001
+            capabilities:
+              drop: ["ALL"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: resume-devops-app
+spec:
+  selector:
+    app: resume-devops-app
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+  type: ClusterIP

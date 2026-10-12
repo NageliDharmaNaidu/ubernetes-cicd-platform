@@ -1,0 +1,22 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build container image
+        run: docker build -t resume-devops-app:${{ github.sha }} .
+      - name: Smoke test health endpoint
+        run: |
+          docker run -d --name app -p 8080:8080 resume-devops-app:${{ github.sha }}
+          for attempt in $(seq 1 15); do
+            if curl --fail http://localhost:8080/health; then exit 0; fi
+            sleep 1
+          done
+          docker logs app
+          exit 1
